@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نقطه خط</title>
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  // چک می‌کند که SDK لود شده باشد
+  if (typeof window.Eitaa === "undefined" || !Eitaa.WebApp) {
+    console.warn("Eitaa.SDK not available — make sure this is inside Eitaa WebApp");
+    return;
+  }
+
+  const app = Eitaa.WebApp;
+
+  // به ایتا می‌گوید صفحه آماده است
+  app.ready();
+
+  // تمام صفحه کردن WebApp
+  if (app.expand) app.expand();
+
+  // غیرفعال کردن سوایپ عمودی (اختیاری)
+  if (app.disableVerticalSwipes) app.disableVerticalSwipes();
+
+  // مدیریت دکمه برگشت
+  app.onEvent("backButtonClicked", () => {
+    if (history.length > 1) {
+      history.back();
+    } else {
+      app.close();
+    }
+  });
+
+  // مثال: تغییر رنگ هدر
+  if (app.setHeaderColor) {
+    app.setHeaderColor("#000000"); 
+  }
+});
+</script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://esm.sh/three",
+        "nipplejs": "https://esm.sh/nipplejs"
+      }
+    }
+    </script>
+    <style>
+        body {
+            user-select: none;
+            touch-action: none;
+        }
+
+        #game-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            cursor: crosshair;
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; filter: blur(4px); }
+            50% { opacity: 0.8; filter: blur(8px); }
+        }
+
+        .glow {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.5em;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.75rem;
+        }
+    </style>
+    <style>
+@font-face {
+    font-family: 'SHBlabeloo';
+    src: url(data:font/ttf;base64,AAEAAAALAIAAAwAwT1MvMg8SBJ0AAAC8AAAAYGNtYXAK6y0JAAABHAAAAFRnYXNwAAAAEAAAAXAAAAAIZ2x5ZtqJQnIAAAGIAAAKQGhlYWQKJgHRAAALsAAAADZoaGVhB5oD3QAAC8wAAAAkaG10eEwAAAAAAAvcAAAAHGxvY2EABAB4AAAMBAAAABxtYXhwAAgANQAADEgAAAAgbmFtZTWzKpsAAAxIAAACcHBvc3QAAwAAAAAPeAAAACAAAwPAAZAABQAAAUwBZgNwAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaaaaaa);
+    font-weight: large;
+    font-style: large;
+}
+
+body {
+    font-family: 'SHBlabeloo', sans-serif;
+}
+</style>
+</head>
+<body class="bg-slate-900 text-white overflow-hidden h-screen flex flex-col font-sans">
+    
+    <!-- Main Menu -->
+    <div id="main-menu" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-6">
+        <h1 class="text-5xl font-black mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+            نقطه خط
+        </h1>
+        
+        <div class="flex flex-col gap-4 w-full max-w-xs">
+            <button id="btn-pvp" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
+                بازی دو نفره
+            </button>
+            <button id="btn-pve" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
+                بازی با ربات
+            </button>
+            <button id="btn-settings" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
+                تنظیمات
+            </button>
+        </div>
+        
+        <p class="mt-12 text-slate-500 text-xs font-mono uppercase tracking-widest">کاری از سید آروین موسوی</p>
+    </div>
+
+    <!-- Settings Menu -->
+    <div id="settings-menu" class="hidden absolute inset-0 z-[60] flex flex-col items-center justify-center bg-slate-950 p-6">
+        <h2 class="text-3xl font-bold mb-8">تنظیمات</h2>
+        
+        <div class="w-full max-w-sm space-y-6">
+            <div class="space-y-2">
+                <label class="text-sm font-semibold text-slate-400">اندازه سایز</label>
+                <select id="setting-grid" class="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700">
+                    <option value="3">کوچک</option>
+                    <option value="5" selected>کوچک</option>
+                    <option value="8">بزرگ</option>
+                    <option value="12">خیلی بزرگ</option>
+                </select>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-sm font-semibold text-slate-400">سختی ربات</label>
+                <select id="setting-difficulty" class="w-full bg-slate-800 p-3 rounded-xl outline-none border border-slate-700">
+                    <option value="easy">آسون</option>
+                    <option value="medium" selected>متوسط</option>
+                    <option value="hard">سخت</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-slate-400">رنگ بازیکن۱</label>
+                    <input type="color" id="setting-p1-color" value="#3b82f6" class="w-full h-12 bg-transparent cursor-pointer rounded-lg border-none">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-slate-400">رنگ بازیکن۲</label>
+                    <input type="color" id="setting-p2-color" value="#ef4444" class="w-full h-12 bg-transparent cursor-pointer rounded-lg border-none">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" id="setting-bloom" checked class="w-5 h-5 rounded border-slate-700 bg-slate-800">
+                    <span class="text-sm font-semibold text-slate-400">افکت نوری</span>
+                </label>
+            </div>
+        </div>
+        
+        <button id="btn-settings-back" class="mt-10 bg-white text-black font-bold py-3 px-12 rounded-full shadow-lg transition-transform active:scale-95">
+            ذخیره تنظیمات
+        </button>
+    </div>
+
+    <!-- Game UI Overlay -->
+    <div id="game-ui" class="flex flex-col h-full pointer-events-none p-4">
+        <!-- Stats -->
+        <div class="flex justify-between items-center mb-4">
+            <div id="p1-score-card" class="bg-blue-900/40 border-l-4 border-blue-500 px-4 py-2 rounded-r-lg transition-all">
+                <div class="text-[10px] font-bold opacity-70">بازیکن۱</div>
+                <div id="p1-score" class="text-2xl font-black">0</div>
+            </div>
+            
+            <div class="text-center">
+                <div id="turn-indicator" class="text-xs font-bold bg-slate-800 px-4 py-1 rounded-full border border-slate-700">نوبت بازیکن۱</div>
+            </div>
+
+            <div id="p2-score-card" class="bg-red-900/40 border-r-4 border-red-500 px-4 py-2 rounded-l-lg text-right transition-all">
+                <div class="text-[10px] font-bold opacity-70" id="p2-label">بازیکن۲</div>
+                <div id="p2-score" class="text-2xl font-black">0</div>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="flex-grow flex items-center justify-center pointer-events-auto overflow-hidden relative" id="canvas-wrapper">
+            <canvas id="game-canvas"></canvas>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-4 flex justify-between items-center pointer-events-auto">
+            <button id="btn-game-exit" class="text-slate-500 hover:text-white transition-colors text-xs font-bold p-2 uppercase tracking-widest">
+                خروج
+            </button>
+            <button id="btn-game-reset" class="text-slate-500 hover:text-white transition-colors text-xs font-bold p-2 uppercase tracking-widest">
+                بازنشانی
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over" class="hidden absolute inset-0 z-[70] flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xl p-10 text-center">
+        <div class="w-24 h-24 mb-6 rounded-full bg-slate-800 flex items-center justify-center">
+            <svg class="w-12 h-12 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+        </div>
+        <h2 id="winner-text" class="text-4xl font-black mb-2 uppercase italic tracking-tighter">بازیکن ۱برنده شد</h2>
+        <p id="final-score" class="text-slate-400 mb-12">امتیاز نهایی:</p>
+        
+        <button id="btn-play-again" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-2xl shadow-xl transition-transform active:scale-95">
+            بازی مجدد
+        </button>
+    </div>
+
+    <script type="module">
+        /**
+         * Pro Dots & Boxes - Main Game Logic
+         */
+
+        class SoundManager {
+            constructor() {
+                this.context = new (window.AudioContext || window.webkitAudioContext)();
+                this.buffers = {};
+            }
+
+            async load(name, url) {
+                try {
+                    const response = await fetch(url);
+                    const arrayBuffer = await response.arrayBuffer();
+                    this.buffers[name] = await this.context.decodeAudioData(arrayBuffer);
+                } catch (e) {
+                    console.warn(`Failed to load sound: ${name}`);
+                }
+            }
+
+            play(name) {
+                if (!this.buffers[name]) return;
+                if (this.context.state === 'suspended') {
+                    this.context.resume();
+                }
+                const source = this.context.createBufferSource();
+                source.buffer = this.buffers[name];
+                source.connect(this.context.destination);
+                source.start(0);
+            }
+        }
+
+        const sounds = new SoundManager();
+        sounds.load('line', 'line_draw.mp3');
+        sounds.load('box', 'box_complete.mp3');
+        sounds.load('win', 'victory.mp3');
+
+        // --- Game State ---
+        const state = {
+            gridSize: 5,
+            difficulty: 'medium',
+            p1Color: '#3b82f6',
+            p2Color: '#ef4444',
+            isPvE: true,
+            currentPlayer: 1, // 1 or 2
+            dots: [],
+            lines: [], // {p1, p2, owner}
+            boxes: [], // {indices: [4 dots], owner}
+            scores: { 1: 0, 2: 0 },
+            isGameOver: false,
+            bloom: true,
+            canvas: null,
+            ctx: null,
+            hoveredLine: null,
+        };
+
+        // --- Initialization ---
+        function init() {
+            state.canvas = document.getElementById('game-canvas');
+            state.ctx = state.canvas.getContext('2d');
+            
+            setupEventListeners();
+            resetGame();
+            animate();
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('resize', resizeCanvas);
+            
+            const canvas = state.canvas;
+            
+            const handleMove = (e) => {
+                if (state.isGameOver || (state.isPvE && state.currentPlayer === 2)) return;
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+                updateHoveredLine(x, y);
+            };
+
+            const handleClick = (e) => {
+                if (state.isGameOver || (state.isPvE && state.currentPlayer === 2)) return;
+                if (state.hoveredLine) {
+                    makeMove(state.hoveredLine);
+                }
+            };
+
+            canvas.addEventListener('mousemove', handleMove);
+            canvas.addEventListener('mousedown', handleClick);
+            canvas.addEventListener('touchstart', (e) => {
+                handleMove(e);
+                handleClick(e);
+            }, { passive: false });
+
+            // Menu Buttons
+            document.getElementById('btn-pvp').onclick = () => {
+                state.isPvE = false;
+                document.getElementById('p2-label').textContent = 'بازیکن ۲';
+                startGame();
+            };
+            
+            document.getElementById('btn-pve').onclick = () => {
+                state.isPvE = true;
+                document.getElementById('p2-label').textContent = 'ROBOT';
+                startGame();
+            };
+
+            document.getElementById('btn-settings').onclick = () => {
+                document.getElementById('settings-menu').classList.remove('hidden');
+            };
+
+            document.getElementById('btn-settings-back').onclick = () => {
+                applySettings();
+                document.getElementById('settings-menu').classList.add('hidden');
+            };
+
+            document.getElementById('btn-game-exit').onclick = () => {
+                document.getElementById('main-menu').classList.remove('hidden');
+                document.getElementById('game-over').classList.add('hidden');
+            };
+
+            document.getElementById('btn-game-reset').onclick = resetGame;
+            document.getElementById('btn-play-again').onclick = resetGame;
+        }
+
+        function applySettings() {
+            state.gridSize = parseInt(document.getElementById('setting-grid').value);
+            state.difficulty = document.getElementById('setting-difficulty').value;
+            state.p1Color = document.getElementById('setting-p1-color').value;
+            state.p2Color = document.getElementById('setting-p2-color').value;
+            state.bloom = document.getElementById('setting-bloom').checked;
+            resetGame();
+        }
+
+        function startGame() {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-over').classList.add('hidden');
+            resetGame();
+        }
+
+        function resetGame() {
+            state.currentPlayer = 1;
+            state.scores = { 1: 0, 2: 0 };
+            state.isGameOver = false;
+            state.lines = [];
+            state.boxes = [];
+            state.hoveredLine = null;
+            
+            document.getElementById('game-over').classList.add('hidden');
+            updateUI();
+            resizeCanvas();
+            
+            // Generate Dots
+            state.dots = [];
+            for (let r = 0; r <= state.gridSize; r++) {
+                for (let c = 0; c <= state.gridSize; c++) {
+                    state.dots.push({ r, c });
+                }
+            }
+
+            // Generate potential lines
+            state.lines = [];
+            for (let r = 0; r <= state.gridSize; r++) {
+                for (let c = 0; c <= state.gridSize; c++) {
+                    // Horizontal
+                    if (c < state.gridSize) {
+                        state.lines.push({
+                            p1: r * (state.gridSize + 1) + c,
+                            p2: r * (state.gridSize + 1) + (c + 1),
+                            owner: 0,
+                            type: 'h'
+                        });
+                    }
+                    // Vertical
+                    if (r < state.gridSize) {
+                        state.lines.push({
+                            p1: r * (state.gridSize + 1) + c,
+                            p2: (r + 1) * (state.gridSize + 1) + c,
+                            owner: 0,
+                            type: 'v'
+                        });
+                    }
+                }
+            }
+
+            // Generate Boxes
+            state.boxes = [];
+            for (let r = 0; r < state.gridSize; r++) {
+                for (let c = 0; c < state.gridSize; c++) {
+                    const tl = r * (state.gridSize + 1) + c;
+                    const tr = tl + 1;
+                    const bl = (r + 1) * (state.gridSize + 1) + c;
+                    const br = bl + 1;
+                    
+                    // Find the 4 lines that make this box
+                    const boxLines = [
+                        state.lines.find(l => l.p1 === tl && l.p2 === tr), // Top
+                        state.lines.find(l => l.p1 === bl && l.p2 === br), // Bottom
+                        state.lines.find(l => l.p1 === tl && l.p2 === bl), // Left
+                        state.lines.find(l => l.p1 === tr && l.p2 === br)  // Right
+                    ];
+                    
+                    state.boxes.push({
+                        r, c,
+                        lines: boxLines,
+                        owner: 0
+                    });
+                }
+            }
+        }
+
+        function resizeCanvas() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            if (!wrapper) return;
+            const size = Math.min(wrapper.clientWidth, wrapper.clientHeight) - 40;
+            state.canvas.width = size;
+            state.canvas.height = size;
+        }
+
+        function updateHoveredLine(x, y) {
+            const margin = state.canvas.width * 0.1;
+            const innerSize = state.canvas.width - margin * 2;
+            const step = innerSize / state.gridSize;
+            
+            let bestDist = 20;
+            let bestLine = null;
+
+            state.lines.forEach(line => {
+                if (line.owner !== 0) return;
+                
+                const d1 = state.dots[line.p1];
+                const d2 = state.dots[line.p2];
+                
+                const x1 = margin + d1.c * step;
+                const y1 = margin + d1.r * step;
+                const x2 = margin + d2.c * step;
+                const y2 = margin + d2.r * step;
+                
+                // Midpoint dist
+                const mx = (x1 + x2) / 2;
+                const my = (y1 + y2) / 2;
+                const dist = Math.sqrt((x - mx)**2 + (y - my)**2);
+                
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestLine = line;
+                }
+            });
+
+            state.hoveredLine = bestLine;
+        }
+
+        function makeMove(line) {
+            if (line.owner !== 0) return;
+            
+            line.owner = state.currentPlayer;
+            sounds.play('line');
+            
+            const boxesCompleted = checkBoxes();
+            
+            if (boxesCompleted > 0) {
+                sounds.play('box');
+                if (isBoardFull()) {
+                    endGame();
+                } else if (state.isPvE && state.currentPlayer === 2) {
+                    setTimeout(robotMove, 500);
+                }
+            } else {
+                state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
+                updateUI();
+                
+                if (state.isPvE && state.currentPlayer === 2) {
+                    setTimeout(robotMove, 600);
+                }
+            }
+        }
+
+        function checkBoxes() {
+            let completed = 0;
+            state.boxes.forEach(box => {
+                if (box.owner === 0 && box.lines.every(l => l.owner !== 0)) {
+                    box.owner = state.currentPlayer;
+                    state.scores[state.currentPlayer]++;
+                    completed++;
+                }
+            });
+            updateUI();
+            return completed;
+        }
+
+        function isBoardFull() {
+            return state.lines.every(l => l.owner !== 0);
+        }
+
+        function updateUI() {
+            document.getElementById('p1-score').textContent = state.scores[1];
+            document.getElementById('p2-score').textContent = state.scores[2];
+            
+            const indicator = document.getElementById('turn-indicator');
+            const p1Card = document.getElementById('p1-score-card');
+            const p2Card = document.getElementById('p2-score-card');
+
+            if (state.currentPlayer === 1) {
+                indicator.textContent = "نوبت بازیکن ۱";
+                indicator.style.color = state.p1Color;
+                p1Card.style.opacity = "1";
+                p2Card.style.opacity = "0.4";
+                p1Card.style.transform = "scale(1.1)";
+                p2Card.style.transform = "scale(1.0)";
+            } else {
+                indicator.textContent = (state.isPvE ? "نوبت ربات" : "نوبت بازیکن۲")
+                indicator.style.color = state.p2Color;
+                p1Card.style.opacity = "0.4";
+                p2Card.style.opacity = "1";
+                p1Card.style.transform = "scale(1.0)";
+                p2Card.style.transform = "scale(1.1)";
+            }
+        }
+
+        function endGame() {
+            state.isGameOver = true;
+            sounds.play('win');
+            
+            const winnerText = document.getElementById('winner-text');
+            const finalScore = document.getElementById('final-score');
+            
+            if (state.scores[1] > state.scores[2]) {
+                winnerText.textContent = "بازیکن ۱برنده شد!";
+                winnerText.style.color = state.p1Color;
+            } else if (state.scores[2] > state.scores[1]) {
+                winnerText.textContent = (state.isPvE ? "ربات برنده شد" : "بازیکن ۲ برنده شد");
+                winnerText.style.color = state.p2Color;
+            } else {
+                winnerText.textContent = "مساوی شد";
+                winnerText.style.color = "white";
+            }
+            
+            finalScore.textContent = `Final Score: ${state.scores[1]} - ${state.scores[2]}`;
+            
+            setTimeout(() => {
+                document.getElementById('game-over').classList.remove('hidden');
+            }, 1000);
+        }
+
+        // --- Robot AI ---
+        function robotMove() {
+            if (state.isGameOver || !state.isPvE) return;
+
+            const availableLines = state.lines.filter(l => l.owner === 0);
+            if (availableLines.length === 0) return;
+
+            let selectedLine = null;
+
+            // AI Levels
+            if (state.difficulty === 'easy') {
+                selectedLine = availableLines[Math.floor(Math.random() * availableLines.length)];
+            } else {
+                // 1. Can I finish a box?
+                const finishableBox = state.boxes.find(b => b.owner === 0 && b.lines.filter(l => l.owner !== 0).length === 3);
+                if (finishableBox) {
+                    selectedLine = finishableBox.lines.find(l => l.owner === 0);
+                } else if (state.difficulty === 'hard') {
+                    // 2. Hard Mode: Avoid giving the opponent a box (lines that would complete 3rd side)
+                    const safeLines = availableLines.filter(l => {
+                        // Check every box this line belongs to
+                        const parentBoxes = state.boxes.filter(b => b.lines.includes(l));
+                        return parentBoxes.every(b => b.lines.filter(ln => ln.owner !== 0).length < 2);
+                    });
+                    
+                    if (safeLines.length > 0) {
+                        selectedLine = safeLines[Math.floor(Math.random() * safeLines.length)];
+                    } else {
+                        // If no safe lines, just take the one that gives away the fewest boxes (heuristic: random for now)
+                        selectedLine = availableLines[Math.floor(Math.random() * availableLines.length)];
+                    }
+                } else {
+                    // Normal Mode: Simple random move from available lines
+                    selectedLine = availableLines[Math.floor(Math.random() * availableLines.length)];
+                }
+            }
+
+            if (selectedLine) makeMove(selectedLine);
+        }
+
+        // --- Rendering ---
+        function animate() {
+            render();
+            requestAnimationFrame(animate);
+        }
+
+        function render() {
+            const ctx = state.ctx;
+            const canvas = state.canvas;
+            if (!ctx || !canvas) return;
+            const margin = canvas.width * 0.1;
+            const innerSize = canvas.width - margin * 2;
+            const step = innerSize / state.gridSize;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Boxes (Fills)
+            state.boxes.forEach(box => {
+                if (box.owner !== 0) {
+                    const x = margin + box.c * step;
+                    const y = margin + box.r * step;
+                    ctx.fillStyle = box.owner === 1 ? state.p1Color + '33' : state.p2Color + '33';
+                    ctx.fillRect(x + 5, y + 5, step - 10, step - 10);
+                    
+                    // Initial
+                    ctx.fillStyle = box.owner === 1 ? state.p1Color : state.p2Color;
+                    ctx.font = `bold ${step * 0.4}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(box.owner === 1 ? '1' : (state.isPvE ? 'R' : '2'), x + step/2, y + step/2);
+                }
+            });
+
+            // Draw Lines
+            state.lines.forEach(line => {
+                const d1 = state.dots[line.p1];
+                const d2 = state.dots[line.p2];
+                const x1 = margin + d1.c * step;
+                const y1 = margin + d1.r * step;
+                const x2 = margin + d2.c * step;
+                const y2 = margin + d2.r * step;
+
+                const isHovered = state.hoveredLine === line;
+                
+                if (line.owner !== 0 || isHovered) {
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    
+                    if (line.owner !== 0) {
+                        ctx.strokeStyle = line.owner === 1 ? state.p1Color : state.p2Color;
+                        ctx.lineWidth = 6;
+                        
+                        if (state.bloom) {
+                            ctx.shadowBlur = 15;
+                            ctx.shadowColor = ctx.strokeStyle;
+                        }
+                    } else {
+                        ctx.strokeStyle = state.currentPlayer === 1 ? state.p1Color + '66' : state.p2Color + '66';
+                        ctx.lineWidth = 4;
+                        ctx.setLineDash([5, 5]);
+                    }
+                    
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Draw Dots
+            state.dots.forEach(dot => {
+                const x = margin + dot.c * step;
+                const y = margin + dot.r * step;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#cbd5e1'; // Slate 300
+                ctx.fill();
+                
+                // Slight glow on dots
+                if (state.bloom) {
+                    ctx.shadowBlur = 5;
+                    ctx.shadowColor = 'white';
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+            });
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
