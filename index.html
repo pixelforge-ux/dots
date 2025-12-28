@@ -11,27 +11,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.Eitaa && Eitaa.WebApp) {
       Eitaa.WebApp.ready();
 
-      // تمام صفحه شدن
+      // تمام صفحه
       if (Eitaa.WebApp.expand)
         Eitaa.WebApp.expand();
 
-      // تغییر رنگ هدر به آبی مایل به سفید (ثابت)
+      // رنگ هدر
       if (Eitaa.WebApp.setHeaderColor)
         Eitaa.WebApp.setHeaderColor('#e3f2fd');
 
-      // تایید قبل از بستن WebApp
-      if (Eitaa.WebApp.enableClosingConfirmation)
-        Eitaa.WebApp.enableClosingConfirmation();
+      // ❌ سوایپ عمودی رو غیرفعال نکن
+      // تا کاربر بتونه ببنده
+      // Eitaa.WebApp.disableVerticalSwipes();
 
-      // غیرفعال کردن سوایپ عمودی (اگر پشتیبانی شود)
-      if (Eitaa.WebApp.disableVerticalSwipes)
-        Eitaa.WebApp.disableVerticalSwipes();
+      // نمایش دکمه بک ایتا
+      if (Eitaa.WebApp.BackButton)
+        Eitaa.WebApp.BackButton.show();
 
-      // دکمه بک
+      // مدیریت بک
       Eitaa.WebApp.onEvent('backButtonClicked', () => {
         if (history.length > 1) {
           history.back();
         } else {
+          // اجازه بده رفتار پیش‌فرض ایتا انجام بشه (بستن)
           Eitaa.WebApp.close();
         }
       });
