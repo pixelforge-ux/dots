@@ -160,29 +160,126 @@ document.addEventListener("DOMContentLoaded", () => {
         #ads-webview-container.active {
             transform: translateY(0);
         }
-        #ads-loading {
+        <!-- ===== Ads WebView with Percentage Loader (NO JS) ===== -->
+
+<style>
+/* WebView container */
+#ads-webview-container{
+    position:fixed;
+    inset:0;
+    background:#0f172a;
+    z-index:100;
+    display:flex;
+    flex-direction:column;
+}
+
+/* Header */
+.ads-header{
+    padding:12px;
+    background:#020617;
+    color:white;
+    display:flex;
+    justify-content:center;
+    font-weight:bold;
+}
+
+/* Loader */
+.loader-wrap{
     position:absolute;
     inset:0;
     background:#0f172a;
     display:flex;
-    flex-direction:column;
-    justify-content:center;
     align-items:center;
+    justify-content:center;
     z-index:10;
 }
 
-/* Spinner */
-.loader {
-    width:48px;
-    height:48px;
-    border:4px solid rgba(255,255,255,.2);
-    border-top:4px solid #f97316;
+.loader-box{
+    text-align:center;
+    color:#f8fafc;
+    font-family:Vazirmatn, sans-serif;
+}
+
+/* Circle */
+.progress-ring{
+    width:120px;
+    height:120px;
     border-radius:50%;
-    animation:spin 1s linear infinite;
+    border:6px solid rgba(255,255,255,.1);
+    border-top-color:#f97316;
+    animation:spin 1.5s linear infinite;
+    margin:0 auto 18px;
 }
-@keyframes spin {
-    to { transform: rotate(360deg); }
+
+/* Percentage counter */
+.percent{
+    font-size:28px;
+    font-weight:900;
 }
+.percent::after{
+    content:"0%";
+    animation:count 4s linear forwards;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
+
+/* Fake percentage animation */
+@keyframes count{
+    0%   {content:"0%"}
+    10%  {content:"10%"}
+    20%  {content:"20%"}
+    30%  {content:"30%"}
+    40%  {content:"40%"}
+    50%  {content:"50%"}
+    60%  {content:"60%"}
+    70%  {content:"70%"}
+    80%  {content:"80%"}
+    90%  {content:"90%"}
+    100% {content:"100%"}
+}
+
+/* Hide loader after animation */
+.loader-wrap{
+    animation:hideLoader 4.2s forwards;
+}
+@keyframes hideLoader{
+    to{
+        opacity:0;
+        visibility:hidden;
+    }
+}
+
+/* iframe */
+iframe{
+    flex:1;
+    border:none;
+    background:white;
+}
+</style>
+
+<div id="ads-webview-container">
+
+    <div class="ads-header">فرم ثبت تبلیغ</div>
+
+    <!-- Loader -->
+    <div class="loader-wrap">
+        <div class="loader-box">
+            <div class="progress-ring"></div>
+            <div class="percent"></div>
+            <div style="margin-top:8px;font-size:13px;color:#94a3b8">
+                در حال بارگذاری...
+            </div>
+        </div>
+    </div>
+
+    <!-- WebView -->
+    <iframe src="https://forms.gle/UHJ8mChHrEN4WFBa9"></iframe>
+
+</div>
+
+<!-- ===== END ===== -->
     </style>
     <style>
 @font-face { 
