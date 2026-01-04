@@ -160,6 +160,29 @@ document.addEventListener("DOMContentLoaded", () => {
         #ads-webview-container.active {
             transform: translateY(0);
         }
+        #ads-loading {
+    position:absolute;
+    inset:0;
+    background:#0f172a;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:10;
+}
+
+/* Spinner */
+.loader {
+    width:48px;
+    height:48px;
+    border:4px solid rgba(255,255,255,.2);
+    border-top:4px solid #f97316;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
     </style>
     <style>
 @font-face { 
